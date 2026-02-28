@@ -202,7 +202,7 @@
         .number-display { text-align: center; margin-bottom: 20px; }
         .number-display .number { font-size: 5rem; font-weight: 900; color: #4A4035; line-height: 1; }
         .number-display .label { font-size: 1rem; font-weight: 600; color: #B8AD9E; margin-top: 4px; }
-        .drop-area { min-height: 160px; border: 2.5px dashed #D8D2C8; border-radius: 20px; background: #FDFCFA; padding: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-content: start; justify-content: center; transition: background 0.18s, border-color 0.18s; margin-bottom: 24px; position: relative; }
+        .drop-area { min-height: 160px; border: 2.5px dashed #D8D2C8; border-radius: 20px; background: #FDFCFA; padding: 16px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; align-content: start; justify-items: center; transition: background 0.18s, border-color 0.18s; margin-bottom: 24px; position: relative; }
         .drop-area.drag-over { background: #D9EDFC; border-color: #6BADE8; border-style: solid; }
         .drop-area .placed-circle { width: 36px; height: 36px; border-radius: 50%; background: #6BADE8; box-shadow: 0 2px 8px rgba(107,173,232,0.25); animation: popIn 0.35s ease-out forwards; }
         .drop-area .hint-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #C8C0B4; font-size: 0.9rem; font-weight: 500; pointer-events: none; }
