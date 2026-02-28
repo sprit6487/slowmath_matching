@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>느린아이 숫자 매칭</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap');
+        *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0; padding: 0;
+            background: #F5F1EB;
+            min-height: 100dvh;
+            display: flex; justify-content: center; align-items: flex-start;
+            user-select: none;
+        }
+        .app {
+            width: 100%; max-width: 480px;
+            min-height: 100dvh;
+            background: white;
+            padding: 24px 20px;
+            padding-top: max(24px, env(safe-area-inset-top));
+            padding-bottom: max(24px, env(safe-area-inset-bottom));
+            display: flex; flex-direction: column;
+        }
+        @media (min-width: 768px) {
+            body { align-items: center; padding: 32px; }
+            .app {
+                max-width: 560px; min-height: auto;
+                border-radius: 32px;
+                box-shadow: 0 8px 48px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+                padding: 44px 40px;
+            }
+        }
+        .hidden { display: none !important; }
+
+        /* ── 공통 ── */
+        .progress-track { height: 8px; border-radius: 99px; background: #F0ECE6; overflow: hidden; }
+        .progress-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #6BADE8, #5BC886); transition: width 0.5s ease; }
+        .feedback { text-align: center; font-size: 1.1rem; font-weight: 700; padding: 12px 0; min-height: 48px; }
+        .feedback.correct { color: #5BC886; }
+        .feedback.wrong { color: #F07070; }
+
+        /* ── 로그인 ── */
+        .login-view { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-height: 100dvh; padding: 40px 20px; }
+        .login-logo-area { text-align: center; margin-bottom: 48px; }
+        .login-logo-area h1 { font-size: 1.875rem; font-weight: 900; letter-spacing: -0.025em; margin-top: 8px; }
+        .login-subtitle { color: #B8AD9E; font-size: 0.9375rem; margin-top: 4px; }
+        .login-buttons { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
+        .login-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px 20px; border-radius: 12px; font-size: 0.9375rem; font-weight: 600; font-family: 'Noto Sans KR', sans-serif; border: none; cursor: pointer; transition: transform 0.1s; }
+        .login-btn:active { transform: scale(0.97); }
+        .login-btn svg { flex-shrink: 0; }
+        .login-btn.kakao { background: #FEE500; color: #191919; }
+        .login-btn.naver { background: #03C75A; color: #FFF; }
+        .login-btn.google { background: #FFF; color: #444; border: 1.5px solid #DADCE0; }
+        .login-btn.facebook { background: #1877F2; color: #FFF; }
+
+        /* ── 시작 화면 ── */
+        .start-view { display: none; flex-direction: column; align-items: center; flex: 1; padding-top: 24px; }
+        .start-header { text-align: center; margin-bottom: 24px; }
+        .mode-card { border: 2.5px solid #E8E2DA; border-radius: 20px; padding: 20px; width: 100%; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s, border-color 0.15s; background: white; text-align: center; margin-bottom: 12px; }
+        .mode-card:active { transform: scale(0.97); }
+        .mode-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+        .mode-card .mode-icon { height: 56px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+        .mode-card .mode-title { font-size: 1.1rem; font-weight: 700; color: #4A4035; }
+        .mode-card .mode-desc { font-size: 0.8rem; color: #B8AD9E; margin-top: 4px; }
+
+        /* ── 모드 아이콘 애니메이션 ── */
+        /* 순서대로 채우기: 1→2→3 숫자와 원이 순차 등장 */
+        .seq-icon { display: flex; gap: 6px; align-items: flex-end; }
+        .seq-icon .seq-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .seq-icon .seq-num { font-size: 0.8rem; font-weight: 900; color: #4A4035; opacity: 0; animation: seqFadeIn 0.4s ease forwards; }
+        .seq-icon .seq-dots { display: flex; flex-direction: column; gap: 2px; }
+        .seq-icon .seq-dot { width: 12px; height: 12px; border-radius: 50%; background: #6BADE8; opacity: 0; animation: seqDotPop 0.3s ease forwards; }
+        .seq-icon .seq-col:nth-child(1) .seq-num { animation-delay: 0.1s; }
+        .seq-icon .seq-col:nth-child(2) .seq-num { animation-delay: 0.7s; }
+        .seq-icon .seq-col:nth-child(3) .seq-num { animation-delay: 1.3s; }
+        .seq-icon .seq-col:nth-child(1) .seq-dot:nth-child(1) { animation-delay: 0.3s; }
+        .seq-icon .seq-col:nth-child(2) .seq-dot:nth-child(1) { animation-delay: 0.9s; }
+        .seq-icon .seq-col:nth-child(2) .seq-dot:nth-child(2) { animation-delay: 1.05s; }
+        .seq-icon .seq-col:nth-child(3) .seq-dot:nth-child(1) { animation-delay: 1.5s; }
+        .seq-icon .seq-col:nth-child(3) .seq-dot:nth-child(2) { animation-delay: 1.65s; }
+        .seq-icon .seq-col:nth-child(3) .seq-dot:nth-child(3) { animation-delay: 1.8s; }
+        .seq-icon .seq-arrow { font-size: 1rem; color: #C8C0B4; opacity: 0; animation: seqFadeIn 0.3s ease forwards; }
+        .seq-icon .seq-arrow:nth-of-type(1) { animation-delay: 0.5s; }
+        .seq-icon .seq-arrow:nth-of-type(2) { animation-delay: 1.1s; }
+        @keyframes seqFadeIn { to { opacity: 1; } }
+        @keyframes seqDotPop { 0% { opacity: 0; transform: scale(0); } 60% { transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
+
+        /* 섞어서 채우기: 숫자가 뒤섞이며 원이 이동 */
+        .shuffle-icon { position: relative; width: 80px; height: 50px; }
+        .shuffle-icon .shuf-num { position: absolute; font-size: 1.6rem; font-weight: 900; left: 4px; top: 6px; animation: shufSpin 3s ease-in-out infinite; }
+        .shuffle-icon .shuf-arrow { position: absolute; left: 34px; top: 18px; color: #C8C0B4; font-size: 0.9rem; }
+        .shuffle-icon .shuf-box { position: absolute; right: 0; top: 4px; width: 34px; height: 42px; border: 2px dashed #D8D2C8; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; align-content: start; justify-content: center; }
+        .shuffle-icon .shuf-dot { width: 10px; height: 10px; border-radius: 50%; background: #F0A050; opacity: 0; animation: shufDotIn 0.4s ease forwards; }
+        .shuffle-icon .shuf-dot:nth-child(1) { animation-delay: 0.6s; }
+        .shuffle-icon .shuf-dot:nth-child(2) { animation-delay: 1.6s; }
+        .shuffle-icon .shuf-dot:nth-child(3) { animation-delay: 2.6s; }
+        @keyframes shufSpin {
+            0%, 30% { content: ''; color: #6BADE8; }
+            33%, 63% { color: #F0A050; }
+            66%, 100% { color: #5BC886; }
+        }
+        .shuffle-icon .shuf-num { animation: shufNum 3s steps(1) infinite; }
+        @keyframes shufNum {
+            0% { opacity: 1; }
+            33% { opacity: 0; }
+            34% { opacity: 1; }
+            66% { opacity: 0; }
+            67% { opacity: 1; }
+            100% { opacity: 1; }
+        }
+        .shuffle-icon .shuf-n1, .shuffle-icon .shuf-n2, .shuffle-icon .shuf-n3 {
+            position: absolute; font-size: 1.6rem; font-weight: 900; left: 4px; top: 6px;
+        }
+        .shuffle-icon .shuf-n1 { color: #6BADE8; animation: shufShow1 3s ease infinite; }
+        .shuffle-icon .shuf-n2 { color: #F0A050; animation: shufShow2 3s ease infinite; }
+        .shuffle-icon .shuf-n3 { color: #5BC886; animation: shufShow3 3s ease infinite; }
+        @keyframes shufShow1 { 0%,28% { opacity:1; } 33%,100% { opacity:0; } }
+        @keyframes shufShow2 { 0%,32% { opacity:0; } 37%,62% { opacity:1; } 67%,100% { opacity:0; } }
+        @keyframes shufShow3 { 0%,66% { opacity:0; } 71%,95% { opacity:1; } 100% { opacity:0; } }
+
+        /* 세기: 원이 나타나고 ?→숫자 전환 */
+        .count-icon { display: flex; align-items: center; gap: 8px; }
+        .count-icon .ci-dots { display: flex; gap: 3px; }
+        .count-icon .ci-dot { width: 14px; height: 14px; border-radius: 50%; background: #6BADE8; opacity: 0; animation: ciDotIn 0.3s ease forwards; }
+        .count-icon .ci-dot:nth-child(1) { animation-delay: 0.2s; }
+        .count-icon .ci-dot:nth-child(2) { animation-delay: 0.4s; }
+        .count-icon .ci-dot:nth-child(3) { animation-delay: 0.6s; }
+        .count-icon .ci-dot:nth-child(4) { animation-delay: 0.8s; }
+        .count-icon .ci-eq { font-size: 1.1rem; font-weight: 700; color: #C8C0B4; opacity: 0; animation: seqFadeIn 0.3s ease forwards; animation-delay: 1s; }
+        .count-icon .ci-answer { font-size: 1.5rem; font-weight: 900; position: relative; width: 28px; height: 28px; }
+        .count-icon .ci-q { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #D8D2C8; animation: ciQOut 2.5s ease infinite; }
+        .count-icon .ci-n { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #5BC886; animation: ciNIn 2.5s ease infinite; }
+        @keyframes ciDotIn { 0% { opacity:0; transform:scale(0); } 60% { transform:scale(1.2); } 100% { opacity:1; transform:scale(1); } }
+        @keyframes ciQOut { 0%,40% { opacity:1; } 50%,80% { opacity:0; } 90%,100% { opacity:1; } }
+        @keyframes ciNIn { 0%,40% { opacity:0; transform:scale(0); } 50% { opacity:1; transform:scale(1.3); } 55%,80% { opacity:1; transform:scale(1); } 90%,100% { opacity:0; transform:scale(0); } }
+
+        /* ── 설정 (음성/충동방지) ── */
+        .settings-section { width: 100%; margin-top: 16px; padding-top: 16px; border-top: 1.5px solid #F0ECE6; }
+        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .setting-label { font-size: 0.875rem; font-weight: 600; color: #4A4035; }
+        .setting-desc { font-size: 0.75rem; color: #B8AD9E; margin-top: 2px; }
+        .toggle-track { width: 48px; height: 28px; border-radius: 99px; position: relative; background: #E0DAD0; transition: background 0.2s; cursor: pointer; flex-shrink: 0; border: none; outline: none; }
+        .toggle-track.on { background: #5BC886; }
+        .toggle-knob { width: 22px; height: 22px; border-radius: 50%; background: white; position: absolute; top: 3px; left: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.12); transition: transform 0.2s; }
+        .toggle-track.on .toggle-knob { transform: translateX(20px); }
+
+        .impulse-mode-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .impulse-mode-btn { display: flex; flex-direction: column; align-items: center; padding: 10px 8px; border-radius: 14px; border: 2px solid #E8E2DA; background: white; cursor: pointer; transition: all 0.15s; }
+        .impulse-mode-btn.selected { border-color: #C4AA82; background: #FAF5EE; }
+        .impulse-mode-icon { font-size: 1.2rem; margin-bottom: 2px; }
+        .impulse-mode-label { font-size: 0.8rem; font-weight: 700; color: #4A4035; }
+        .impulse-mode-desc { font-size: 0.65rem; color: #B8AD9E; margin-top: 1px; }
+        .imp-sec-row { display: flex; gap: 4px; }
+        .imp-sec { flex: 1; padding: 8px 0; font-size: 0.7rem; font-weight: 600; border-radius: 10px; border: 2px solid #E8E2DA; background: white; color: #8C8070; cursor: pointer; transition: all 0.15s; text-align: center; }
+        .imp-sec.active { border-color: #C4AA82; background: #FAF5EE; color: #7B6545; }
+
+        .logout-btn { background: none; border: 1.5px solid #E8E2DA; border-radius: 8px; padding: 6px 14px; font-size: 0.75rem; font-weight: 600; color: #B8AD9E; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; margin-top: auto; padding-top: 20px; }
+        .logout-btn:hover { background: #F5F1EB; }
+
+        /* ── 게임 공통 ── */
+        .game-view { display: none; flex-direction: column; flex: 1; }
+        .game-status { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .question-label { font-size: 0.875rem; font-weight: 600; color: #8C8070; }
+        .score-label { font-size: 0.875rem; font-weight: 700; color: #5BC886; }
+        .btn-home { width: 36px; height: 36px; border-radius: 10px; border: 2px solid #E8E2DA; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; color: #8C8070; flex-shrink: 0; }
+        .btn-home:active { background: #F5F1EB; }
+        .game-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .game-top-info { flex: 1; }
+
+        /* ── 채우기 모드 ── */
+        .number-display { text-align: center; margin-bottom: 20px; }
+        .number-display .number { font-size: 5rem; font-weight: 900; color: #4A4035; line-height: 1; }
+        .number-display .label { font-size: 1rem; font-weight: 600; color: #B8AD9E; margin-top: 4px; }
+        .drop-area { min-height: 160px; border: 2.5px dashed #D8D2C8; border-radius: 20px; background: #FDFCFA; padding: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-content: start; justify-content: center; transition: background 0.18s, border-color 0.18s; margin-bottom: 24px; position: relative; }
+        .drop-area.drag-over { background: #D9EDFC; border-color: #6BADE8; border-style: solid; }
+        .drop-area .placed-circle { width: 36px; height: 36px; border-radius: 50%; background: #6BADE8; box-shadow: 0 2px 8px rgba(107,173,232,0.25); animation: popIn 0.35s ease-out forwards; }
+        .drop-area .hint-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #C8C0B4; font-size: 0.9rem; font-weight: 500; pointer-events: none; }
+        .divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #E8E2DA; }
+        .divider span { font-size: 0.8rem; font-weight: 600; color: #B8AD9E; white-space: nowrap; }
+        .source-area { display: grid; grid-template-columns: repeat(10, 36px); gap: 8px; justify-content: center; padding: 12px 0; margin-bottom: 16px; }
+        .source-circle { width: 36px; height: 36px; border-radius: 50%; background: #F0A050; cursor: grab; touch-action: none; box-shadow: 0 2px 6px rgba(240,160,80,0.3); transition: transform 0.1s, opacity 0.15s; }
+        .source-circle:active { cursor: grabbing; transform: scale(1.12); }
+        .source-circle.used { opacity: 0; pointer-events: none; transform: scale(0); transition: all 0.3s ease; }
+        .floating-circle { position: fixed; z-index: 9999; pointer-events: none; width: 40px; height: 40px; border-radius: 50%; background: #F0A050; transform: translate(-50%, -50%); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+        .check-btn { width: 100%; padding: 16px 0; border-radius: 16px; border: none; background: linear-gradient(135deg, #6BADE8, #5BC886); color: white; font-family: 'Noto Sans KR', sans-serif; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.1s, opacity 0.15s; }
+        .check-btn:active { transform: scale(0.97); }
+        .check-btn:disabled { opacity: 0.45; cursor: default; }
+
+        /* ── 세기 모드 ── */
+        .count-dots-area { min-height: 160px; border: 2.5px solid #E8E2DA; border-radius: 20px; background: #FDFCFA; padding: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-content: start; justify-content: center; margin-bottom: 24px; }
+        .count-dot { width: 36px; height: 36px; border-radius: 50%; background: #6BADE8; box-shadow: 0 2px 8px rgba(107,173,232,0.25); animation: popIn 0.35s ease-out forwards; }
+        .count-label { text-align: center; font-size: 1rem; font-weight: 600; color: #B8AD9E; margin-bottom: 16px; }
+        .options-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+        .option-btn { padding: 14px 0; border-radius: 16px; border: 2.5px solid #E8E2DA; background: white; font-family: 'Noto Sans KR', sans-serif; font-size: 1.25rem; font-weight: 700; color: #4A4035; cursor: pointer; transition: transform 0.1s, border-color 0.15s, background 0.15s; }
+        .option-btn:active:not(:disabled) { transform: scale(0.95); }
+        .option-btn:disabled { cursor: default; }
+        .option-btn.correct { background: #D4F5E0 !important; border-color: #5BC886 !important; color: #1A7A3A !important; }
+        .option-btn.wrong { background: #FDE8E8 !important; border-color: #F07070 !important; color: #B91C1C !important; opacity: 0.5; }
+        .option-btn.locked { pointer-events: none; opacity: 0.45; }
+        .reveal-btn { display: block; width: 100%; max-width: 320px; margin: 0 auto 12px; padding: 14px 0; border-radius: 14px; border: 2px solid #C4AA82; background: #FAF5EE; color: #7B6545; font-family: 'Noto Sans KR', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; }
+        .reveal-btn:active { background: #F0E6D6; transform: scale(0.98); }
+        .delay-countdown { text-align: center; font-size: 1.5rem; font-weight: 900; color: #C4AA82; padding: 16px 0; animation: pulse-count 1s ease infinite; }
+        @keyframes pulse-count { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.7; } }
+
+        /* ── 결과 ── */
+        .result-view { display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; padding: 40px 0; }
+        .result-view .big-score { font-size: 4rem; font-weight: 900; color: #5BC886; line-height: 1; }
+        .result-view .result-label { font-size: 1.1rem; font-weight: 600; color: #8C8070; margin-top: 8px; }
+        .result-view .result-detail { font-size: 0.9rem; color: #B8AD9E; margin-top: 4px; }
+        .retry-btn { margin-top: 32px; padding: 14px 48px; border-radius: 16px; border: 2.5px solid #E8E2DA; background: white; font-family: 'Noto Sans KR', sans-serif; font-size: 1rem; font-weight: 700; color: #4A4035; cursor: pointer; }
+        .retry-btn:active { transform: scale(0.95); }
+
+        /* ── 애니메이션 ── */
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 45% { transform: scale(1.3); opacity: 1; } 65% { transform: scale(0.9); } 80% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+
+        @media (min-width: 768px) {
+            .source-area { grid-template-columns: repeat(10, 40px); gap: 10px; }
+            .source-circle { width: 40px; height: 40px; }
+            .drop-area .placed-circle { width: 40px; height: 40px; }
+            .count-dot { width: 40px; height: 40px; }
+            .floating-circle { width: 44px; height: 44px; }
+            .number-display .number { font-size: 6rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <!-- ══════════ 로그인 ══════════ -->
+    <div id="login-view" class="login-view">
+        <div class="login-logo-area">
+            <div style="display:inline-block; margin-bottom:12px;">
+                <svg viewBox="0 0 120 100" width="120" height="100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="30" cy="72" rx="10" ry="6" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(-20 30 72)"/>
+                    <ellipse cx="78" cy="76" rx="10" ry="6" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(15 78 76)"/>
+                    <ellipse cx="28" cy="54" rx="9" ry="5.5" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(-10 28 54)"/>
+                    <path d="M18 60 L10 55" stroke="#F2DC8C" stroke-width="4" stroke-linecap="round"/>
+                    <ellipse cx="55" cy="58" rx="35" ry="20" fill="#F5E6C8" stroke="#3A9B6A" stroke-width="2"/>
+                    <ellipse cx="52" cy="42" rx="32" ry="28" fill="#7EDCAA" stroke="#3A9B6A" stroke-width="2.5"/>
+                    <path d="M52 18 L42 32 L42 48 L52 58 L62 48 L62 32 Z" fill="none" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                    <line x1="42" y1="32" x2="24" y2="38" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                    <line x1="62" y1="32" x2="80" y2="38" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                    <line x1="42" y1="48" x2="26" y2="56" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                    <line x1="62" y1="48" x2="78" y2="56" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                    <ellipse cx="42" cy="26" rx="6" ry="4" fill="white" opacity="0.35" transform="rotate(-15 42 26)"/>
+                    <ellipse cx="62" cy="36" rx="4" ry="3" fill="white" opacity="0.2"/>
+                    <ellipse cx="92" cy="40" rx="17" ry="15" fill="#F5E6C8" stroke="#3A9B6A" stroke-width="2.5"/>
+                    <ellipse cx="82" cy="72" rx="10" ry="6" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(10 82 72)"/>
+                    <circle cx="99" cy="35" r="4" fill="white" stroke="#3A9B6A" stroke-width="1.5"/>
+                    <circle cx="100" cy="34" r="2.5" fill="#3A9B6A"/>
+                    <circle cx="101" cy="33" r="1" fill="white"/>
+                    <circle cx="100" cy="44" r="3.5" fill="#F0A050" opacity="0.4"/>
+                    <path d="M94 46 Q98 50 103 46" fill="none" stroke="#3A9B6A" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h1><span style="color:#2E7FD9;">느린</span><span style="color:#F0901E;">아이</span> <span style="color:#4A4035;">숫자 매칭</span></h1>
+            <p class="login-subtitle">숫자를 보고, 동그라미를 옮겨보세요.</p>
+        </div>
+        <div class="login-buttons">
+            <button class="login-btn kakao" onclick="socialLogin('kakao')">
+                <svg width="20" height="20" viewBox="0 0 20 20"><path d="M10 1C4.477 1 0 4.477 0 8.667c0 2.7 1.753 5.072 4.393 6.413-.192.717-.694 2.6-.794 3.004-.124.497.182.49.383.356.158-.105 2.51-1.708 3.525-2.398.8.118 1.628.18 2.493.18 5.523 0 10-3.477 10-7.555C20 4.477 15.523 1 10 1z" fill="#191919"/></svg>
+                카카오 로그인
+            </button>
+            <button class="login-btn naver" onclick="socialLogin('naver')">
+                <svg width="20" height="20" viewBox="0 0 20 20"><path d="M13.57 10.684L6.066 0H0v20h6.43V9.316L13.934 20H20V0h-6.43v10.684z" fill="white"/></svg>
+                네이버 로그인
+            </button>
+            <button class="login-btn google" onclick="socialLogin('google')">
+                <svg width="20" height="20" viewBox="0 0 48 48"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.001-.001 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg>
+                Google 로그인
+            </button>
+            <button class="login-btn facebook" onclick="socialLogin('facebook')">
+                <svg width="20" height="20" viewBox="0 0 20 20"><path d="M20 10c0-5.523-4.477-10-10-10S0 4.477 0 10c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V10h2.54V7.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V10h2.773l-.443 2.89h-2.33v6.988C16.343 19.128 20 14.991 20 10z" fill="white"/></svg>
+                Facebook 로그인
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════ 시작 화면 ══════════ -->
+    <div id="start-view" class="start-view">
+        <div class="start-header">
+            <svg viewBox="0 0 120 100" width="100" height="84" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="30" cy="72" rx="10" ry="6" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(-20 30 72)"/>
+                <ellipse cx="78" cy="76" rx="10" ry="6" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(15 78 76)"/>
+                <ellipse cx="28" cy="54" rx="9" ry="5.5" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(-10 28 54)"/>
+                <path d="M18 60 L10 55" stroke="#F2DC8C" stroke-width="4" stroke-linecap="round"/>
+                <ellipse cx="55" cy="58" rx="35" ry="20" fill="#F5E6C8" stroke="#3A9B6A" stroke-width="2"/>
+                <ellipse cx="52" cy="42" rx="32" ry="28" fill="#7EDCAA" stroke="#3A9B6A" stroke-width="2.5"/>
+                <path d="M52 18 L42 32 L42 48 L52 58 L62 48 L62 32 Z" fill="none" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                <line x1="42" y1="32" x2="24" y2="38" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                <line x1="62" y1="32" x2="80" y2="38" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                <line x1="42" y1="48" x2="26" y2="56" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                <line x1="62" y1="48" x2="78" y2="56" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+                <ellipse cx="42" cy="26" rx="6" ry="4" fill="white" opacity="0.35" transform="rotate(-15 42 26)"/>
+                <ellipse cx="62" cy="36" rx="4" ry="3" fill="white" opacity="0.2"/>
+                <ellipse cx="92" cy="40" rx="17" ry="15" fill="#F5E6C8" stroke="#3A9B6A" stroke-width="2.5"/>
+                <ellipse cx="82" cy="72" rx="10" ry="6" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(10 82 72)"/>
+                <circle cx="99" cy="35" r="4" fill="white" stroke="#3A9B6A" stroke-width="1.5"/>
+                <circle cx="100" cy="34" r="2.5" fill="#3A9B6A"/>
+                <circle cx="101" cy="33" r="1" fill="white"/>
+                <circle cx="100" cy="44" r="3.5" fill="#F0A050" opacity="0.4"/>
+                <path d="M94 46 Q98 50 103 46" fill="none" stroke="#3A9B6A" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <h1 style="font-size:1.5rem; font-weight:900; margin:8px 0 0;">
+                <span style="color:#2E7FD9;">느린</span><span style="color:#F0901E;">아이</span>
+                <span style="color:#4A4035;">숫자 매칭</span>
+            </h1>
+        </div>
+
+        <!-- 모드 선택 -->
+        <div style="width:100%;">
+            <div class="mode-card" onclick="startGame('sequential')">
+                <div class="mode-icon">
+                    <div class="seq-icon">
+                        <div class="seq-col">
+                            <div class="seq-num">1</div>
+                            <div class="seq-dots"><div class="seq-dot"></div></div>
+                        </div>
+                        <div class="seq-arrow">→</div>
+                        <div class="seq-col">
+                            <div class="seq-num">2</div>
+                            <div class="seq-dots"><div class="seq-dot"></div><div class="seq-dot"></div></div>
+                        </div>
+                        <div class="seq-arrow">→</div>
+                        <div class="seq-col">
+                            <div class="seq-num">3</div>
+                            <div class="seq-dots"><div class="seq-dot"></div><div class="seq-dot"></div><div class="seq-dot"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mode-title">순서대로 채우기</div>
+                <div class="mode-desc">1부터 20까지 순서대로 동그라미를 채워요</div>
+            </div>
+            <div class="mode-card" onclick="startGame('fill')">
+                <div class="mode-icon">
+                    <div class="shuffle-icon">
+                        <div class="shuf-n1">7</div>
+                        <div class="shuf-n2">3</div>
+                        <div class="shuf-n3">15</div>
+                        <div class="shuf-arrow">→</div>
+                        <div class="shuf-box">
+                            <div class="shuf-dot"></div>
+                            <div class="shuf-dot"></div>
+                            <div class="shuf-dot"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mode-title">섞어서 채우기</div>
+                <div class="mode-desc">랜덤 숫자를 보고 동그라미를 그만큼 옮겨요</div>
+            </div>
+            <div class="mode-card" onclick="startGame('count')">
+                <div class="mode-icon">
+                    <div class="count-icon">
+                        <div class="ci-dots">
+                            <div class="ci-dot"></div>
+                            <div class="ci-dot"></div>
+                            <div class="ci-dot"></div>
+                            <div class="ci-dot"></div>
+                        </div>
+                        <div class="ci-eq">=</div>
+                        <div class="ci-answer">
+                            <div class="ci-q">?</div>
+                            <div class="ci-n">4</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mode-title">세기</div>
+                <div class="mode-desc">랜덤 동그라미 개수를 세고 숫자를 골라요</div>
+            </div>
+        </div>
+
+        <!-- 설정 -->
+        <div class="settings-section">
+            <!-- 음성 -->
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">음성</div>
+                    <div class="setting-desc">정답/오답 음성 안내</div>
+                </div>
+                <button id="tts-toggle" onclick="toggleTTS()" class="toggle-track on">
+                    <span class="toggle-knob"></span>
+                </button>
+            </div>
+
+            <!-- 충동방지 -->
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">충동방지 <span style="font-size:0.7rem; font-weight:400; color:#B8AD9E; margin-left:4px;">세기 모드</span></div>
+                    <div class="setting-desc">생각할 시간을 줘요</div>
+                </div>
+                <button id="impulse-toggle" onclick="toggleImpulse()" class="toggle-track on">
+                    <span class="toggle-knob"></span>
+                </button>
+            </div>
+            <div id="impulse-details">
+                <div class="impulse-mode-options">
+                    <button class="impulse-mode-btn" onclick="setImpulseMode('hide')" data-mode="hide">
+                        <span class="impulse-mode-icon">&#x1F440;</span>
+                        <span class="impulse-mode-label">보기 확인</span>
+                        <span class="impulse-mode-desc">버튼을 누르면 보기가 나타나요</span>
+                    </button>
+                    <button class="impulse-mode-btn selected" onclick="setImpulseMode('lock')" data-mode="lock">
+                        <span class="impulse-mode-icon">&#x1F512;</span>
+                        <span class="impulse-mode-label">선택 잠금</span>
+                        <span class="impulse-mode-desc">N초 동안 선택할 수 없어요</span>
+                    </button>
+                </div>
+                <div class="imp-sec-row">
+                    <button onclick="setImpulseDelay(1)" class="imp-sec">1초</button>
+                    <button onclick="setImpulseDelay(2)" class="imp-sec">2초</button>
+                    <button onclick="setImpulseDelay(3)" class="imp-sec">3초</button>
+                    <button onclick="setImpulseDelay(4)" class="imp-sec">4초</button>
+                    <button onclick="setImpulseDelay(5)" class="imp-sec active">5초</button>
+                    <button onclick="setImpulseDelay(6)" class="imp-sec">6초</button>
+                    <button onclick="setImpulseDelay(7)" class="imp-sec">7초</button>
+                    <button onclick="setImpulseDelay(8)" class="imp-sec">8초</button>
+                    <button onclick="setImpulseDelay(9)" class="imp-sec">9초</button>
+                    <button onclick="setImpulseDelay(10)" class="imp-sec">10초</button>
+                </div>
+            </div>
+        </div>
+
+        <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </div>
+
+    <!-- ══════════ 채우기 게임 ══════════ -->
+    <div id="fill-view" class="game-view">
+        <div class="game-top">
+            <button onclick="goHome()" class="btn-home" title="홈">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-8 9 8M5 11v9a1 1 0 001 1h3m8 0h3a1 1 0 001-1v-9"/></svg>
+            </button>
+            <div class="game-top-info">
+                <div class="game-status">
+                    <span class="question-label" id="fill-q-label">1 / 20</span>
+                    <span class="score-label" id="fill-score-label">0점</span>
+                </div>
+                <div class="progress-track"><div class="progress-bar" id="fill-progress" style="width:0%"></div></div>
+            </div>
+        </div>
+        <div class="number-display fade-in" id="fill-number-display">
+            <div class="number" id="fill-target">1</div>
+            <div class="label">이 숫자만큼 동그라미를 채우세요</div>
+        </div>
+        <div class="drop-area" id="drop-area">
+            <span class="hint-text" id="hint-text">여기에 동그라미를 놓으세요</span>
+        </div>
+        <div class="divider"><span>동그라미 <span id="source-count">20</span>개</span></div>
+        <div class="source-area" id="source-area"></div>
+        <div class="feedback" id="fill-feedback"></div>
+        <button class="check-btn" id="fill-check-btn" onclick="checkFillAnswer()" disabled>확인하기</button>
+    </div>
+
+    <!-- ══════════ 세기 게임 ══════════ -->
+    <div id="count-view" class="game-view">
+        <div class="game-top">
+            <button onclick="goHome()" class="btn-home" title="홈">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-8 9 8M5 11v9a1 1 0 001 1h3m8 0h3a1 1 0 001-1v-9"/></svg>
+            </button>
+            <div class="game-top-info">
+                <div class="game-status">
+                    <span class="question-label" id="count-q-label">1 / 20</span>
+                    <span class="score-label" id="count-score-label">0점</span>
+                </div>
+                <div class="progress-track"><div class="progress-bar" id="count-progress" style="width:0%"></div></div>
+            </div>
+        </div>
+        <div class="count-label fade-in" id="count-label-text">동그라미가 몇 개인가요?</div>
+        <div class="count-dots-area" id="count-dots-area"></div>
+        <div id="count-impulse-area"></div>
+        <div class="options-grid" id="count-options"></div>
+        <div class="feedback" id="count-feedback"></div>
+    </div>
+
+    <!-- ══════════ 결과 ══════════ -->
+    <div id="result-view" class="result-view">
+        <svg viewBox="0 0 120 100" width="100" height="84" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="30" cy="72" rx="10" ry="6" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(-20 30 72)"/>
+            <ellipse cx="78" cy="76" rx="10" ry="6" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(15 78 76)"/>
+            <ellipse cx="28" cy="54" rx="9" ry="5.5" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(-10 28 54)"/>
+            <path d="M18 60 L10 55" stroke="#F2DC8C" stroke-width="4" stroke-linecap="round"/>
+            <ellipse cx="55" cy="58" rx="35" ry="20" fill="#F5E6C8" stroke="#3A9B6A" stroke-width="2"/>
+            <ellipse cx="52" cy="42" rx="32" ry="28" fill="#7EDCAA" stroke="#3A9B6A" stroke-width="2.5"/>
+            <path d="M52 18 L42 32 L42 48 L52 58 L62 48 L62 32 Z" fill="none" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+            <line x1="42" y1="32" x2="24" y2="38" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+            <line x1="62" y1="32" x2="80" y2="38" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+            <line x1="42" y1="48" x2="26" y2="56" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+            <line x1="62" y1="48" x2="78" y2="56" stroke="#3A9B6A" stroke-width="1.3" opacity="0.35"/>
+            <ellipse cx="42" cy="26" rx="6" ry="4" fill="white" opacity="0.35" transform="rotate(-15 42 26)"/>
+            <ellipse cx="62" cy="36" rx="4" ry="3" fill="white" opacity="0.2"/>
+            <ellipse cx="92" cy="40" rx="17" ry="15" fill="#F5E6C8" stroke="#3A9B6A" stroke-width="2.5"/>
+            <ellipse cx="82" cy="72" rx="10" ry="6" fill="#F2DC8C" stroke="#3A9B6A" stroke-width="2" transform="rotate(10 82 72)"/>
+            <circle cx="99" cy="35" r="4" fill="white" stroke="#3A9B6A" stroke-width="1.5"/>
+            <circle cx="100" cy="34" r="2.5" fill="#3A9B6A"/>
+            <circle cx="101" cy="33" r="1" fill="white"/>
+            <circle cx="100" cy="44" r="3.5" fill="#F0A050" opacity="0.4"/>
+            <path d="M94 46 Q98 50 103 46" fill="none" stroke="#3A9B6A" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <div class="big-score" id="final-score">0</div>
+        <div class="result-label">맞힌 문제</div>
+        <div class="result-detail" id="result-detail"></div>
+        <button class="retry-btn" onclick="goHome()">다시 하기</button>
+    </div>
+
+</div>
+
+<script>
+/* ══════════ 상태 ══════════ */
+let gameMode = '';       // 'fill' | 'count'
+let currentQ = 0;
+let score = 0;
+const TOTAL = 20;
+let questions = [];
+let placedCount = 0;
+let countBusy = false;
+let countTimer = null;
+
+/* 설정 */
+let ttsEnabled = true;
+let impulsePrevention = true;
+let impulseMode = 'lock';  // 'hide' | 'lock'
+let impulseDelay = 5;
+
+/* 드래그 */
+let dragging = false;
+let floatingEl = null;
+let dragSourceEl = null;
+let dragSourceIdx = null;
+
+/* ══════════ 뷰 전환 ══════════ */
+const VIEWS = ['login-view','start-view','fill-view','count-view','result-view'];
+function showView(id) {
+    VIEWS.forEach(v => {
+        const el = document.getElementById(v);
+        el.style.display = (v === id) ? 'flex' : 'none';
+    });
+}
+
+/* ══════════ 로그인 ══════════ */
+function socialLogin(provider) {
+    localStorage.setItem('slowmath_login', JSON.stringify({ provider, time: Date.now() }));
+    if (window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+    showView('start-view');
+}
+function logout() {
+    localStorage.removeItem('slowmath_login');
+    showView('login-view');
+}
+function goHome() {
+    if (countTimer) { clearInterval(countTimer); countTimer = null; }
+    showView('start-view');
+}
+
+/* ══════════ TTS ══════════ */
+function toggleTTS() {
+    ttsEnabled = !ttsEnabled;
+    const t = document.getElementById('tts-toggle');
+    t.classList.toggle('on', ttsEnabled);
+    if (!ttsEnabled && window.speechSynthesis) speechSynthesis.cancel();
+}
+function speak(text) {
+    if (!ttsEnabled || !window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR'; u.rate = 0.9;
+    setTimeout(() => speechSynthesis.speak(u), 50);
+}
+
+/* ══════════ 충동방지 ══════════ */
+function toggleImpulse() {
+    impulsePrevention = !impulsePrevention;
+    const t = document.getElementById('impulse-toggle');
+    t.classList.toggle('on', impulsePrevention);
+    document.getElementById('impulse-details').style.display = impulsePrevention ? '' : 'none';
+}
+function setImpulseMode(mode) {
+    impulseMode = mode;
+    document.querySelectorAll('.impulse-mode-btn').forEach(b => b.classList.toggle('selected', b.dataset.mode === mode));
+}
+function setImpulseDelay(sec) {
+    impulseDelay = sec;
+    document.querySelectorAll('.imp-sec').forEach((b, i) => b.classList.toggle('active', i + 1 === sec));
+}
+
+/* ══════════ 문제 생성 ══════════ */
+function generateSequential() {
+    questions = [];
+    for (let i = 1; i <= 20; i++) questions.push(i);
+}
+function generateShuffled() {
+    generateSequential();
+    for (let i = 19; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+}
+
+/* ══════════ 게임 시작 ══════════ */
+function startGame(mode) {
+    gameMode = mode;
+    currentQ = 0;
+    score = 0;
+    if (mode === 'sequential') {
+        generateSequential();
+        showView('fill-view');
+        document.getElementById('fill-score-label').textContent = '0점';
+        loadFillQuestion();
+    } else if (mode === 'fill') {
+        generateShuffled();
+        showView('fill-view');
+        document.getElementById('fill-score-label').textContent = '0점';
+        loadFillQuestion();
+    } else {
+        generateShuffled();
+        showView('count-view');
+        document.getElementById('count-score-label').textContent = '0점';
+        loadCountQuestion();
+    }
+}
+
+/* ════════════════════════════════════════════
+   채우기 모드
+   ════════════════════════════════════════════ */
+
+function renderSourceCircles() {
+    const area = document.getElementById('source-area');
+    area.innerHTML = '';
+    for (let i = 0; i < 20; i++) {
+        const c = document.createElement('div');
+        c.className = 'source-circle';
+        c.dataset.idx = i;
+        area.appendChild(c);
+    }
+}
+
+/* 좌표 */
+function getPos(e) {
+    if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+}
+
+/* 전역 드래그 */
+function onDragStart(e) {
+    const el = e.target.closest('.source-circle');
+    if (!el || el.classList.contains('used') || dragging) return;
+    e.preventDefault();
+    dragging = true;
+    dragSourceEl = el;
+    dragSourceIdx = parseInt(el.dataset.idx);
+    const pos = getPos(e);
+    floatingEl = document.createElement('div');
+    floatingEl.className = 'floating-circle';
+    floatingEl.style.left = pos.x + 'px';
+    floatingEl.style.top = pos.y + 'px';
+    document.body.appendChild(floatingEl);
+    el.style.opacity = '0.3';
+}
+function onDragMove(e) {
+    if (!dragging || !floatingEl) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    floatingEl.style.left = pos.x + 'px';
+    floatingEl.style.top = pos.y + 'px';
+    const da = document.getElementById('drop-area');
+    if (!da) return;
+    const r = da.getBoundingClientRect();
+    da.classList.toggle('drag-over', pos.x >= r.left && pos.x <= r.right && pos.y >= r.top && pos.y <= r.bottom);
+}
+function onDragEnd(e) {
+    if (!dragging || !floatingEl) return;
+    const pos = getPos(e);
+    const da = document.getElementById('drop-area');
+    if (da) {
+        const r = da.getBoundingClientRect();
+        da.classList.remove('drag-over');
+        if (pos.x >= r.left && pos.x <= r.right && pos.y >= r.top && pos.y <= r.bottom) {
+            placeCircle(dragSourceIdx);
+        } else if (dragSourceEl) {
+            dragSourceEl.style.opacity = '1';
+        }
+    }
+    floatingEl.remove();
+    floatingEl = null;
+    dragging = false;
+    dragSourceEl = null;
+    dragSourceIdx = null;
+}
+document.addEventListener('mousedown', onDragStart);
+document.addEventListener('mousemove', onDragMove);
+document.addEventListener('mouseup', onDragEnd);
+document.addEventListener('touchstart', onDragStart, { passive: false });
+document.addEventListener('touchmove', onDragMove, { passive: false });
+document.addEventListener('touchend', onDragEnd);
+
+function placeCircle(idx) {
+    const el = document.querySelectorAll('.source-circle')[idx];
+    if (!el || el.classList.contains('used')) return;
+    el.classList.add('used');
+    placedCount++;
+    const da = document.getElementById('drop-area');
+    const hint = document.getElementById('hint-text');
+    if (hint) hint.style.display = 'none';
+    const c = document.createElement('div');
+    c.className = 'placed-circle';
+    da.appendChild(c);
+    document.getElementById('source-count').textContent = (20 - placedCount);
+    document.getElementById('fill-check-btn').disabled = false;
+}
+
+function loadFillQuestion() {
+    if (currentQ >= TOTAL) { showResult(); return; }
+    const target = questions[currentQ];
+    document.getElementById('fill-target').textContent = target;
+    document.getElementById('fill-q-label').textContent = (currentQ + 1) + ' / ' + TOTAL;
+    document.getElementById('fill-progress').style.width = (currentQ / TOTAL * 100) + '%';
+    document.getElementById('fill-feedback').textContent = '';
+    document.getElementById('fill-feedback').className = 'feedback';
+    document.getElementById('fill-check-btn').disabled = true;
+    placedCount = 0;
+    document.getElementById('drop-area').innerHTML = '<span class="hint-text" id="hint-text">여기에 동그라미를 놓으세요</span>';
+    const nd = document.getElementById('fill-number-display');
+    nd.classList.remove('fade-in'); void nd.offsetWidth; nd.classList.add('fade-in');
+    renderSourceCircles();
+    document.getElementById('source-count').textContent = 20;
+    speak(target + '');
+}
+
+function checkFillAnswer() {
+    const target = questions[currentQ];
+    const fb = document.getElementById('fill-feedback');
+    if (placedCount === target) {
+        score++;
+        fb.textContent = '정답! ' + target + '개를 정확히 채웠어요';
+        fb.className = 'feedback correct';
+        document.getElementById('fill-score-label').textContent = score + '점';
+        speak('정답! ' + target + '개');
+    } else {
+        fb.textContent = placedCount + '개를 놓았어요. 정답은 ' + target + '개예요';
+        fb.className = 'feedback wrong';
+        speak('오답. 정답은 ' + target + '개');
+    }
+    document.getElementById('fill-check-btn').disabled = true;
+    currentQ++;
+    setTimeout(loadFillQuestion, 1500);
+}
+
+/* ════════════════════════════════════════════
+   세기 모드
+   ════════════════════════════════════════════ */
+
+function loadCountQuestion() {
+    if (currentQ >= TOTAL) { showResult(); return; }
+    countBusy = false;
+    const target = questions[currentQ];
+    document.getElementById('count-q-label').textContent = (currentQ + 1) + ' / ' + TOTAL;
+    document.getElementById('count-progress').style.width = (currentQ / TOTAL * 100) + '%';
+    document.getElementById('count-feedback').textContent = '';
+    document.getElementById('count-feedback').className = 'feedback';
+
+    /* 동그라미 표시 */
+    const dotsArea = document.getElementById('count-dots-area');
+    dotsArea.innerHTML = '';
+    for (let i = 0; i < target; i++) {
+        const d = document.createElement('div');
+        d.className = 'count-dot';
+        d.style.animationDelay = (i * 0.04) + 's';
+        dotsArea.appendChild(d);
+    }
+
+    /* 선택지 생성: 정답 포함 4개 */
+    const opts = generateOptions(target);
+    const optArea = document.getElementById('count-options');
+    optArea.innerHTML = '';
+    const impulseArea = document.getElementById('count-impulse-area');
+    impulseArea.innerHTML = '';
+
+    opts.forEach(n => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = n;
+        btn.onclick = () => pickCountAnswer(btn, n, target);
+        optArea.appendChild(btn);
+    });
+
+    speak('동그라미가 몇 개일까요?');
+
+    /* 충동방지 적용 */
+    if (impulsePrevention) {
+        if (impulseMode === 'hide') {
+            /* 보기 숨기기 */
+            optArea.style.visibility = 'hidden';
+            const revealBtn = document.createElement('button');
+            revealBtn.className = 'reveal-btn';
+            revealBtn.textContent = '보기 확인';
+            revealBtn.onclick = () => {
+                optArea.style.visibility = 'visible';
+                revealBtn.remove();
+            };
+            impulseArea.appendChild(revealBtn);
+        } else {
+            /* 선택 잠금 */
+            optArea.querySelectorAll('.option-btn').forEach(b => b.classList.add('locked'));
+            let remaining = impulseDelay;
+            const cd = document.createElement('div');
+            cd.className = 'delay-countdown';
+            cd.textContent = remaining;
+            impulseArea.appendChild(cd);
+            countTimer = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(countTimer);
+                    countTimer = null;
+                    cd.remove();
+                    optArea.querySelectorAll('.option-btn').forEach(b => b.classList.remove('locked'));
+                } else {
+                    cd.textContent = remaining;
+                }
+            }, 1000);
+        }
+    }
+}
+
+function generateOptions(correct) {
+    const set = new Set([correct]);
+    while (set.size < 4) {
+        let n = correct + Math.floor(Math.random() * 7) - 3;
+        if (n >= 1 && n <= 20 && n !== correct) set.add(n);
+    }
+    const arr = Array.from(set);
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function pickCountAnswer(btn, picked, target) {
+    if (countBusy) return;
+    countBusy = true;
+    if (countTimer) { clearInterval(countTimer); countTimer = null; }
+    document.getElementById('count-impulse-area').innerHTML = '';
+
+    const fb = document.getElementById('count-feedback');
+    const allBtns = document.querySelectorAll('#count-options .option-btn');
+
+    allBtns.forEach(b => {
+        b.disabled = true;
+        b.classList.remove('locked');
+        if (parseInt(b.textContent) === target) b.classList.add('correct');
+    });
+
+    if (picked === target) {
+        score++;
+        fb.textContent = '정답! ' + target + '개';
+        fb.className = 'feedback correct';
+        document.getElementById('count-score-label').textContent = score + '점';
+        speak('정답! ' + target + '개');
+    } else {
+        btn.classList.add('wrong');
+        fb.textContent = '오답. 정답은 ' + target + '개예요';
+        fb.className = 'feedback wrong';
+        speak('오답. 정답은 ' + target + '개');
+    }
+
+    currentQ++;
+    setTimeout(loadCountQuestion, 1500);
+}
+
+/* ══════════ 결과 ══════════ */
+function showResult() {
+    showView('result-view');
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('result-detail').textContent = TOTAL + '문제 중 ' + score + '문제 정답';
+    speak(score + '개 맞았어요!');
+}
+
+/* ══════════ 초기화 ══════════ */
+(function init() {
+    const session = localStorage.getItem('slowmath_login');
+    if (session) showView('start-view');
+    if (window.speechSynthesis) {
+        speechSynthesis.getVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined)
+            speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+    }
+})();
+</script>
+</body>
+</html>
