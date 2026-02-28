@@ -104,11 +104,11 @@
         @keyframes shN2 { 0%,34% { opacity:0; transform:scale(0.5); } 37%,61% { opacity:1; transform:scale(1); } 64%,100% { opacity:0; transform:scale(0.5); } }
         @keyframes shN3 { 0%,67% { opacity:0; transform:scale(0.5); } 70%,94% { opacity:1; transform:scale(1); } 97%,100% { opacity:0; transform:scale(0.5); } }
 
-        /* 원 박스 */
-        .shuffle-icon .shuf-box { width: 50px; min-height: 42px; border: 2px dashed #D8D2C8; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 3px; padding: 5px; align-content: start; justify-content: center; }
+        /* 원 박스: 3x3 그리드 */
+        .shuffle-icon .shuf-box { width: 46px; height: 46px; border: 2px dashed #D8D2C8; border-radius: 10px; padding: 5px; position: relative; }
 
-        /* 원 그룹: 각 세트별 show/hide */
-        .shuffle-icon .shuf-set { display: contents; }
+        /* 원 그룹: 각 세트가 동일 위치에서 3x3 그리드로 채움 */
+        .shuffle-icon .shuf-set { position: absolute; top: 5px; left: 5px; display: grid; grid-template-columns: repeat(3, 10px); grid-template-rows: repeat(3, 10px); gap: 3px; }
         .shuffle-icon .shuf-dot { width: 10px; height: 10px; border-radius: 50%; opacity: 0; transform: scale(0); }
 
         /* 세트1: 원2개 (파랑) 0~2s */
