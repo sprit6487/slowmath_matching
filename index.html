@@ -89,38 +89,64 @@
         @keyframes seqFadeIn { to { opacity: 1; } }
         @keyframes seqDotPop { 0% { opacity: 0; transform: scale(0); } 60% { transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* 섞어서 채우기: 숫자가 뒤섞이며 원이 이동 */
-        .shuffle-icon { position: relative; width: 80px; height: 50px; }
-        .shuffle-icon .shuf-num { position: absolute; font-size: 1.6rem; font-weight: 900; left: 4px; top: 6px; animation: shufSpin 3s ease-in-out infinite; }
-        .shuffle-icon .shuf-arrow { position: absolute; left: 34px; top: 18px; color: #C8C0B4; font-size: 0.9rem; }
-        .shuffle-icon .shuf-box { position: absolute; right: 0; top: 4px; width: 34px; height: 42px; border: 2px dashed #D8D2C8; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; align-content: start; justify-content: center; }
-        .shuffle-icon .shuf-dot { width: 10px; height: 10px; border-radius: 50%; background: #F0A050; opacity: 0; animation: shufDotIn 0.4s ease forwards; }
-        .shuffle-icon .shuf-dot:nth-child(1) { animation-delay: 0.6s; }
-        .shuffle-icon .shuf-dot:nth-child(2) { animation-delay: 1.6s; }
-        .shuffle-icon .shuf-dot:nth-child(3) { animation-delay: 2.6s; }
-        @keyframes shufSpin {
-            0%, 30% { content: ''; color: #6BADE8; }
-            33%, 63% { color: #F0A050; }
-            66%, 100% { color: #5BC886; }
+        /* 랜덤으로 채우기: 숫자 등장 → 해당 개수만큼 원 채움 (6초 사이클) */
+        /* 0-2s: 숫자2+원2개  |  2-4s: 숫자4+원4개  |  4-6s: 숫자3+원3개 */
+        .shuffle-icon { display: flex; align-items: center; gap: 6px; position: relative; }
+        .shuffle-icon .shuf-arrow { color: #C8C0B4; font-size: 1rem; }
+
+        /* 숫자 영역 */
+        .shuffle-icon .shuf-nums { position: relative; width: 28px; height: 36px; }
+        .shuffle-icon .shuf-n { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 900; opacity: 0; }
+        .shuffle-icon .shuf-n1 { color: #6BADE8; animation: shN1 6s ease infinite; }
+        .shuffle-icon .shuf-n2 { color: #F0A050; animation: shN2 6s ease infinite; }
+        .shuffle-icon .shuf-n3 { color: #5BC886; animation: shN3 6s ease infinite; }
+        @keyframes shN1 { 0%,3% { opacity:0; transform:scale(0.5); } 5%,28% { opacity:1; transform:scale(1); } 31%,100% { opacity:0; transform:scale(0.5); } }
+        @keyframes shN2 { 0%,34% { opacity:0; transform:scale(0.5); } 37%,61% { opacity:1; transform:scale(1); } 64%,100% { opacity:0; transform:scale(0.5); } }
+        @keyframes shN3 { 0%,67% { opacity:0; transform:scale(0.5); } 70%,94% { opacity:1; transform:scale(1); } 97%,100% { opacity:0; transform:scale(0.5); } }
+
+        /* 원 박스 */
+        .shuffle-icon .shuf-box { width: 50px; min-height: 42px; border: 2px dashed #D8D2C8; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 3px; padding: 5px; align-content: start; justify-content: center; }
+
+        /* 원 그룹: 각 세트별 show/hide */
+        .shuffle-icon .shuf-set { display: contents; }
+        .shuffle-icon .shuf-dot { width: 10px; height: 10px; border-radius: 50%; opacity: 0; transform: scale(0); }
+
+        /* 세트1: 원2개 (파랑) 0~2s */
+        .shuf-set-1 .shuf-dot { background: #6BADE8; animation: shD1 6s ease infinite; }
+        .shuf-set-1 .shuf-dot:nth-child(1) { animation-delay: 0.15s; }
+        .shuf-set-1 .shuf-dot:nth-child(2) { animation-delay: 0.3s; }
+
+        /* 세트2: 원4개 (주황) 2~4s */
+        .shuf-set-2 .shuf-dot { background: #F0A050; animation: shD2 6s ease infinite; }
+        .shuf-set-2 .shuf-dot:nth-child(1) { animation-delay: 0.15s; }
+        .shuf-set-2 .shuf-dot:nth-child(2) { animation-delay: 0.3s; }
+        .shuf-set-2 .shuf-dot:nth-child(3) { animation-delay: 0.45s; }
+        .shuf-set-2 .shuf-dot:nth-child(4) { animation-delay: 0.6s; }
+
+        /* 세트3: 원3개 (초록) 4~6s */
+        .shuf-set-3 .shuf-dot { background: #5BC886; animation: shD3 6s ease infinite; }
+        .shuf-set-3 .shuf-dot:nth-child(1) { animation-delay: 0.15s; }
+        .shuf-set-3 .shuf-dot:nth-child(2) { animation-delay: 0.3s; }
+        .shuf-set-3 .shuf-dot:nth-child(3) { animation-delay: 0.45s; }
+
+        @keyframes shD1 {
+            0%,5% { opacity:0; transform:scale(0); }
+            10% { opacity:1; transform:scale(1.3); }
+            13%,28% { opacity:1; transform:scale(1); }
+            31%,100% { opacity:0; transform:scale(0); }
         }
-        .shuffle-icon .shuf-num { animation: shufNum 3s steps(1) infinite; }
-        @keyframes shufNum {
-            0% { opacity: 1; }
-            33% { opacity: 0; }
-            34% { opacity: 1; }
-            66% { opacity: 0; }
-            67% { opacity: 1; }
-            100% { opacity: 1; }
+        @keyframes shD2 {
+            0%,37% { opacity:0; transform:scale(0); }
+            42% { opacity:1; transform:scale(1.3); }
+            45%,61% { opacity:1; transform:scale(1); }
+            64%,100% { opacity:0; transform:scale(0); }
         }
-        .shuffle-icon .shuf-n1, .shuffle-icon .shuf-n2, .shuffle-icon .shuf-n3 {
-            position: absolute; font-size: 1.6rem; font-weight: 900; left: 4px; top: 6px;
+        @keyframes shD3 {
+            0%,70% { opacity:0; transform:scale(0); }
+            75% { opacity:1; transform:scale(1.3); }
+            78%,94% { opacity:1; transform:scale(1); }
+            97%,100% { opacity:0; transform:scale(0); }
         }
-        .shuffle-icon .shuf-n1 { color: #6BADE8; animation: shufShow1 3s ease infinite; }
-        .shuffle-icon .shuf-n2 { color: #F0A050; animation: shufShow2 3s ease infinite; }
-        .shuffle-icon .shuf-n3 { color: #5BC886; animation: shufShow3 3s ease infinite; }
-        @keyframes shufShow1 { 0%,28% { opacity:1; } 33%,100% { opacity:0; } }
-        @keyframes shufShow2 { 0%,32% { opacity:0; } 37%,62% { opacity:1; } 67%,100% { opacity:0; } }
-        @keyframes shufShow3 { 0%,66% { opacity:0; } 71%,95% { opacity:1; } 100% { opacity:0; } }
 
         /* 세기: 원이 나타나고 ?→숫자 전환 */
         .count-icon { display: flex; align-items: center; gap: 8px; }
@@ -341,18 +367,20 @@
             <div class="mode-card" onclick="startGame('fill')">
                 <div class="mode-icon">
                     <div class="shuffle-icon">
-                        <div class="shuf-n1">7</div>
-                        <div class="shuf-n2">3</div>
-                        <div class="shuf-n3">15</div>
+                        <div class="shuf-nums">
+                            <div class="shuf-n shuf-n1">2</div>
+                            <div class="shuf-n shuf-n2">4</div>
+                            <div class="shuf-n shuf-n3">3</div>
+                        </div>
                         <div class="shuf-arrow">→</div>
                         <div class="shuf-box">
-                            <div class="shuf-dot"></div>
-                            <div class="shuf-dot"></div>
-                            <div class="shuf-dot"></div>
+                            <div class="shuf-set shuf-set-1"><div class="shuf-dot"></div><div class="shuf-dot"></div></div>
+                            <div class="shuf-set shuf-set-2"><div class="shuf-dot"></div><div class="shuf-dot"></div><div class="shuf-dot"></div><div class="shuf-dot"></div></div>
+                            <div class="shuf-set shuf-set-3"><div class="shuf-dot"></div><div class="shuf-dot"></div><div class="shuf-dot"></div></div>
                         </div>
                     </div>
                 </div>
-                <div class="mode-title">섞어서 채우기</div>
+                <div class="mode-title">랜덤으로 채우기</div>
                 <div class="mode-desc">랜덤 숫자를 보고 동그라미를 그만큼 옮겨요</div>
             </div>
             <div class="mode-card" onclick="startGame('count')">
