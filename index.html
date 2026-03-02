@@ -67,6 +67,22 @@
         .mode-card .mode-title { font-size: 1.1rem; font-weight: 700; color: #4A4035; }
         .mode-card .mode-desc { font-size: 0.8rem; color: #B8AD9E; margin-top: 4px; }
 
+        /* ── 모드 그룹 (아이콘 + 범위 버튼) ── */
+        .mode-group { width: 100%; margin-bottom: 12px; }
+        .mode-group-header { border: 2.5px solid #E8E2DA; border-bottom: none; border-radius: 20px 20px 0 0; padding: 16px 20px 12px; background: white; text-align: center; }
+        .mode-group-header .mode-icon { height: 56px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+        .mode-group-header .mode-title { font-size: 1.1rem; font-weight: 700; color: #4A4035; }
+        .mode-group-header .mode-desc { font-size: 0.8rem; color: #B8AD9E; margin-top: 4px; }
+        .range-buttons { display: flex; gap: 0; width: 100%; }
+        .range-btn { flex: 1; padding: 14px 8px; border: 2.5px solid #E8E2DA; background: white; font-family: 'Noto Sans KR', sans-serif; font-size: 0.95rem; font-weight: 700; color: #4A4035; cursor: pointer; transition: all 0.15s; text-align: center; }
+        .range-btn:first-child { border-radius: 0 0 0 20px; border-right-width: 1.25px; }
+        .range-btn:last-child { border-radius: 0 0 20px 0; border-left-width: 1.25px; }
+        .range-btn:active { transform: scale(0.97); }
+        .range-btn.fill-range { color: #B87A30; }
+        .range-btn.fill-range:hover { border-color: #F0A050; background: #FFF6ED; }
+        .range-btn.count-range { color: #2E8B57; }
+        .range-btn.count-range:hover { border-color: #5BC886; background: #EDFAF2; }
+
         /* ── 모드 아이콘 애니메이션 ── */
         /* 순서대로 채우기: 숫자 등장 → 해당 개수만큼 원 채움 (6초 사이클) */
         /* 0-2s: 숫자1+원1개  |  2-4s: 숫자2+원2개  |  4-6s: 숫자3+원3개 */
@@ -219,8 +235,8 @@
         .check-btn:disabled { opacity: 0.45; cursor: default; }
 
         /* ── 세기 모드 ── */
-        .count-dots-area { min-height: 160px; border: 2.5px solid #E8E2DA; border-radius: 20px; background: #FDFCFA; padding: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-content: start; justify-content: center; margin-bottom: 24px; }
-        .count-dot { width: 36px; height: 36px; border-radius: 50%; background: #6BADE8; box-shadow: 0 2px 8px rgba(107,173,232,0.25); animation: popIn 0.35s ease-out forwards; }
+        .count-dots-area { min-height: 160px; border: 2.5px solid #E8E2DA; border-radius: 20px; background: #FDFCFA; padding: 16px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; align-content: start; justify-items: start; margin-bottom: 24px; }
+        .count-dot { width: 100%; aspect-ratio: 1; max-width: 36px; border-radius: 50%; background: #6BADE8; box-shadow: 0 2px 8px rgba(107,173,232,0.25); animation: popIn 0.35s ease-out forwards; }
         .count-label { text-align: center; font-size: 1rem; font-weight: 600; color: #B8AD9E; margin-bottom: 16px; }
         .options-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
         .option-btn { padding: 14px 0; border-radius: 16px; border: 2.5px solid #E8E2DA; background: white; font-family: 'Noto Sans KR', sans-serif; font-size: 1.25rem; font-weight: 700; color: #4A4035; cursor: pointer; transition: transform 0.1s, border-color 0.15s, background 0.15s; }
@@ -251,7 +267,7 @@
             .source-area { grid-template-columns: repeat(10, 40px); gap: 10px; }
             .source-circle { width: 40px; height: 40px; }
             .drop-area .placed-circle { width: 40px; height: 40px; }
-            .count-dot { width: 40px; height: 40px; }
+            .count-dot { max-width: 40px; }
             .floating-circle { width: 44px; height: 44px; }
             .number-display .number { font-size: 6rem; }
         }
@@ -362,43 +378,55 @@
                 <div class="mode-title">순서대로 채우기</div>
                 <div class="mode-desc">1부터 20까지 순서대로 동그라미를 채워요</div>
             </div>
-            <div class="mode-card" onclick="startGame('fill')">
-                <div class="mode-icon">
-                    <div class="shuffle-icon">
-                        <div class="shuf-nums">
-                            <div class="shuf-n shuf-n1">2</div>
-                            <div class="shuf-n shuf-n2">4</div>
-                            <div class="shuf-n shuf-n3">3</div>
-                        </div>
-                        <div class="shuf-arrow">→</div>
-                        <div class="shuf-box">
-                            <div class="shuf-set shuf-set-1"><div class="shuf-dot"></div><div class="shuf-dot"></div></div>
-                            <div class="shuf-set shuf-set-2"><div class="shuf-dot"></div><div class="shuf-dot"></div><div class="shuf-dot"></div><div class="shuf-dot"></div></div>
-                            <div class="shuf-set shuf-set-3"><div class="shuf-dot"></div><div class="shuf-dot"></div><div class="shuf-dot"></div></div>
+            <div class="mode-group">
+                <div class="mode-group-header">
+                    <div class="mode-icon">
+                        <div class="shuffle-icon">
+                            <div class="shuf-nums">
+                                <div class="shuf-n shuf-n1">2</div>
+                                <div class="shuf-n shuf-n2">4</div>
+                                <div class="shuf-n shuf-n3">3</div>
+                            </div>
+                            <div class="shuf-arrow">→</div>
+                            <div class="shuf-box">
+                                <div class="shuf-set shuf-set-1"><div class="shuf-dot"></div><div class="shuf-dot"></div></div>
+                                <div class="shuf-set shuf-set-2"><div class="shuf-dot"></div><div class="shuf-dot"></div><div class="shuf-dot"></div><div class="shuf-dot"></div></div>
+                                <div class="shuf-set shuf-set-3"><div class="shuf-dot"></div><div class="shuf-dot"></div><div class="shuf-dot"></div></div>
+                            </div>
                         </div>
                     </div>
+                    <div class="mode-title">랜덤으로 채우기</div>
+                    <div class="mode-desc">랜덤 숫자를 보고 동그라미를 그만큼 옮겨요</div>
                 </div>
-                <div class="mode-title">랜덤으로 채우기</div>
-                <div class="mode-desc">랜덤 숫자를 보고 동그라미를 그만큼 옮겨요</div>
+                <div class="range-buttons">
+                    <button class="range-btn fill-range" onclick="startGame('fill', 1, 10)">1 ~ 10</button>
+                    <button class="range-btn fill-range" onclick="startGame('fill', 1, 20)">1 ~ 20</button>
+                </div>
             </div>
-            <div class="mode-card" onclick="startGame('count')">
-                <div class="mode-icon">
-                    <div class="count-icon">
-                        <div class="ci-dots">
-                            <div class="ci-dot"></div>
-                            <div class="ci-dot"></div>
-                            <div class="ci-dot"></div>
-                            <div class="ci-dot"></div>
-                        </div>
-                        <div class="ci-eq">=</div>
-                        <div class="ci-answer">
-                            <div class="ci-q">?</div>
-                            <div class="ci-n">4</div>
+            <div class="mode-group">
+                <div class="mode-group-header">
+                    <div class="mode-icon">
+                        <div class="count-icon">
+                            <div class="ci-dots">
+                                <div class="ci-dot"></div>
+                                <div class="ci-dot"></div>
+                                <div class="ci-dot"></div>
+                                <div class="ci-dot"></div>
+                            </div>
+                            <div class="ci-eq">=</div>
+                            <div class="ci-answer">
+                                <div class="ci-q">?</div>
+                                <div class="ci-n">4</div>
+                            </div>
                         </div>
                     </div>
+                    <div class="mode-title">세기</div>
+                    <div class="mode-desc">랜덤 동그라미 개수를 세고 숫자를 골라요</div>
                 </div>
-                <div class="mode-title">세기</div>
-                <div class="mode-desc">랜덤 동그라미 개수를 세고 숫자를 골라요</div>
+                <div class="range-buttons">
+                    <button class="range-btn count-range" onclick="startGame('count', 1, 10)">1 ~ 10</button>
+                    <button class="range-btn count-range" onclick="startGame('count', 1, 20)">1 ~ 20</button>
+                </div>
             </div>
         </div>
 
@@ -541,17 +569,44 @@
 let gameMode = '';       // 'fill' | 'count'
 let currentQ = 0;
 let score = 0;
-const TOTAL = 20;
+let TOTAL = 20;
 let questions = [];
 let placedCount = 0;
 let countBusy = false;
+let countFirstAttemptWrong = false;
 let countTimer = null;
+let rangeMin = 1;
+let rangeMax = 20;
+let sourceCircleCount = 20;
 
 /* 설정 */
 let ttsEnabled = true;
 let impulsePrevention = true;
 let impulseMode = 'lock';  // 'hide' | 'lock'
 let impulseDelay = 5;
+
+function saveSettings() {
+    localStorage.setItem('slowmath_matching_settings', JSON.stringify({
+        ttsEnabled, impulsePrevention, impulseMode, impulseDelay
+    }));
+}
+function loadSettings() {
+    try {
+        const s = JSON.parse(localStorage.getItem('slowmath_matching_settings'));
+        if (!s) return;
+        if (typeof s.ttsEnabled === 'boolean') ttsEnabled = s.ttsEnabled;
+        if (typeof s.impulsePrevention === 'boolean') impulsePrevention = s.impulsePrevention;
+        if (s.impulseMode === 'hide' || s.impulseMode === 'lock') impulseMode = s.impulseMode;
+        if (typeof s.impulseDelay === 'number' && s.impulseDelay >= 1 && s.impulseDelay <= 10) impulseDelay = s.impulseDelay;
+    } catch(e) {}
+}
+function applySettingsUI() {
+    document.getElementById('tts-toggle').classList.toggle('on', ttsEnabled);
+    document.getElementById('impulse-toggle').classList.toggle('on', impulsePrevention);
+    document.getElementById('impulse-details').style.display = impulsePrevention ? '' : 'none';
+    document.querySelectorAll('.impulse-mode-btn').forEach(b => b.classList.toggle('selected', b.dataset.mode === impulseMode));
+    document.querySelectorAll('.imp-sec').forEach((b, i) => b.classList.toggle('active', i + 1 === impulseDelay));
+}
 
 /* 드래그 */
 let dragging = false;
@@ -589,6 +644,7 @@ function toggleTTS() {
     const t = document.getElementById('tts-toggle');
     t.classList.toggle('on', ttsEnabled);
     if (!ttsEnabled && window.speechSynthesis) speechSynthesis.cancel();
+    saveSettings();
 }
 function speak(text) {
     if (!ttsEnabled || !window.speechSynthesis) return;
@@ -604,14 +660,17 @@ function toggleImpulse() {
     const t = document.getElementById('impulse-toggle');
     t.classList.toggle('on', impulsePrevention);
     document.getElementById('impulse-details').style.display = impulsePrevention ? '' : 'none';
+    saveSettings();
 }
 function setImpulseMode(mode) {
     impulseMode = mode;
     document.querySelectorAll('.impulse-mode-btn').forEach(b => b.classList.toggle('selected', b.dataset.mode === mode));
+    saveSettings();
 }
 function setImpulseDelay(sec) {
     impulseDelay = sec;
     document.querySelectorAll('.imp-sec').forEach((b, i) => b.classList.toggle('active', i + 1 === sec));
+    saveSettings();
 }
 
 /* ══════════ 문제 생성 ══════════ */
@@ -626,24 +685,39 @@ function generateShuffled() {
         [questions[i], questions[j]] = [questions[j], questions[i]];
     }
 }
+function generateRanged(min, max) {
+    questions = [];
+    for (let i = min; i <= max; i++) questions.push(i);
+    for (let i = questions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+    TOTAL = questions.length;
+    rangeMin = min;
+    rangeMax = max;
+}
 
 /* ══════════ 게임 시작 ══════════ */
-function startGame(mode) {
+function startGame(mode, min, max) {
     gameMode = mode;
     currentQ = 0;
     score = 0;
     if (mode === 'sequential') {
         generateSequential();
+        rangeMin = 1;
+        rangeMax = 20;
+        sourceCircleCount = 20;
         showView('fill-view');
         document.getElementById('fill-score-label').textContent = '0점';
         loadFillQuestion();
     } else if (mode === 'fill') {
-        generateShuffled();
+        generateRanged(min, max);
+        sourceCircleCount = max;
         showView('fill-view');
         document.getElementById('fill-score-label').textContent = '0점';
         loadFillQuestion();
     } else {
-        generateShuffled();
+        generateRanged(min, max);
         showView('count-view');
         document.getElementById('count-score-label').textContent = '0점';
         loadCountQuestion();
@@ -657,7 +731,7 @@ function startGame(mode) {
 function renderSourceCircles() {
     const area = document.getElementById('source-area');
     area.innerHTML = '';
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < sourceCircleCount; i++) {
         const c = document.createElement('div');
         c.className = 'source-circle';
         c.dataset.idx = i;
@@ -736,7 +810,7 @@ function placeCircle(idx) {
     const c = document.createElement('div');
     c.className = 'placed-circle';
     da.appendChild(c);
-    document.getElementById('source-count').textContent = (20 - placedCount);
+    document.getElementById('source-count').textContent = (sourceCircleCount - placedCount);
     document.getElementById('fill-check-btn').disabled = false;
 }
 
@@ -754,7 +828,7 @@ function loadFillQuestion() {
     const nd = document.getElementById('fill-number-display');
     nd.classList.remove('fade-in'); void nd.offsetWidth; nd.classList.add('fade-in');
     renderSourceCircles();
-    document.getElementById('source-count').textContent = 20;
+    document.getElementById('source-count').textContent = sourceCircleCount;
     speak(target + '');
 }
 
@@ -784,6 +858,7 @@ function checkFillAnswer() {
 function loadCountQuestion() {
     if (currentQ >= TOTAL) { showResult(); return; }
     countBusy = false;
+    countFirstAttemptWrong = false;
     const target = questions[currentQ];
     document.getElementById('count-q-label').textContent = (currentQ + 1) + ' / ' + TOTAL;
     document.getElementById('count-progress').style.width = (currentQ / TOTAL * 100) + '%';
@@ -857,7 +932,12 @@ function generateOptions(correct) {
     const set = new Set([correct]);
     while (set.size < 4) {
         let n = correct + Math.floor(Math.random() * 7) - 3;
-        if (n >= 1 && n <= 20 && n !== correct) set.add(n);
+        if (n >= rangeMin && n <= rangeMax && n !== correct) set.add(n);
+        // 범위 내에서 못 찾으면 범위 넓혀서라도 4개 채우기
+        if (set.size < 4 && n < rangeMin) {
+            let m = Math.floor(Math.random() * (rangeMax - rangeMin + 1)) + rangeMin;
+            if (m !== correct) set.add(m);
+        }
     }
     const arr = Array.from(set);
     for (let i = arr.length - 1; i > 0; i--) {
@@ -869,34 +949,40 @@ function generateOptions(correct) {
 
 function pickCountAnswer(btn, picked, target) {
     if (countBusy) return;
-    countBusy = true;
     if (countTimer) { clearInterval(countTimer); countTimer = null; }
     document.getElementById('count-impulse-area').innerHTML = '';
 
     const fb = document.getElementById('count-feedback');
-    const allBtns = document.querySelectorAll('#count-options .option-btn');
-
-    allBtns.forEach(b => {
-        b.disabled = true;
-        b.classList.remove('locked');
-        if (parseInt(b.textContent) === target) b.classList.add('correct');
-    });
 
     if (picked === target) {
-        score++;
+        /* 정답 */
+        countBusy = true;
+        const allBtns = document.querySelectorAll('#count-options .option-btn');
+        allBtns.forEach(b => {
+            b.disabled = true;
+            b.classList.remove('locked');
+            if (parseInt(b.textContent) === target) b.classList.add('correct');
+        });
+
+        if (!countFirstAttemptWrong) {
+            score++;
+            document.getElementById('count-score-label').textContent = score + '점';
+        }
         fb.textContent = '정답! ' + target + '개';
         fb.className = 'feedback correct';
-        document.getElementById('count-score-label').textContent = score + '점';
         speak('정답! ' + target + '개');
-    } else {
-        btn.classList.add('wrong');
-        fb.textContent = '오답. 정답은 ' + target + '개예요';
-        fb.className = 'feedback wrong';
-        speak('오답. 정답은 ' + target + '개');
-    }
 
-    currentQ++;
-    setTimeout(loadCountQuestion, 1500);
+        currentQ++;
+        setTimeout(loadCountQuestion, 1500);
+    } else {
+        /* 오답: 해당 보기만 비활성화, 다시 고를 수 있음 */
+        countFirstAttemptWrong = true;
+        btn.classList.add('wrong');
+        btn.disabled = true;
+        fb.textContent = '다시 골라보세요';
+        fb.className = 'feedback wrong';
+        speak('다시 골라보세요');
+    }
 }
 
 /* ══════════ 결과 ══════════ */
@@ -909,6 +995,8 @@ function showResult() {
 
 /* ══════════ 초기화 ══════════ */
 (function init() {
+    loadSettings();
+    applySettingsUI();
     const session = localStorage.getItem('slowmath_login');
     if (session) showView('start-view');
     if (window.speechSynthesis) {
