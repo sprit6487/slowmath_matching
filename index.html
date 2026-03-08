@@ -613,6 +613,7 @@ let dragging = false;
 let floatingEl = null;
 let dragSourceEl = null;
 let dragSourceIdx = null;
+let isDraggingPlaced = false;
 
 /* ══════════ 뷰 전환 ══════════ */
 const VIEWS = ['login-view','start-view','fill-view','count-view','result-view'];
@@ -748,19 +749,37 @@ function getPos(e) {
 
 /* 전역 드래그 */
 function onDragStart(e) {
-    const el = e.target.closest('.source-circle');
-    if (!el || el.classList.contains('used') || dragging) return;
-    e.preventDefault();
-    dragging = true;
-    dragSourceEl = el;
-    dragSourceIdx = parseInt(el.dataset.idx);
-    const pos = getPos(e);
-    floatingEl = document.createElement('div');
-    floatingEl.className = 'floating-circle';
-    floatingEl.style.left = pos.x + 'px';
-    floatingEl.style.top = pos.y + 'px';
-    document.body.appendChild(floatingEl);
-    el.style.opacity = '0.3';
+    if (dragging) return;
+    const sourceEl = e.target.closest('.source-circle');
+    const placedEl = e.target.closest('.placed-circle');
+    if (sourceEl && !sourceEl.classList.contains('used')) {
+        e.preventDefault();
+        dragging = true;
+        isDraggingPlaced = false;
+        dragSourceEl = sourceEl;
+        dragSourceIdx = parseInt(sourceEl.dataset.idx);
+        const pos = getPos(e);
+        floatingEl = document.createElement('div');
+        floatingEl.className = 'floating-circle';
+        floatingEl.style.left = pos.x + 'px';
+        floatingEl.style.top = pos.y + 'px';
+        document.body.appendChild(floatingEl);
+        sourceEl.style.opacity = '0.3';
+    } else if (placedEl) {
+        e.preventDefault();
+        dragging = true;
+        isDraggingPlaced = true;
+        dragSourceEl = placedEl;
+        dragSourceIdx = parseInt(placedEl.dataset.sourceIdx);
+        const pos = getPos(e);
+        floatingEl = document.createElement('div');
+        floatingEl.className = 'floating-circle';
+        floatingEl.style.background = '#6BADE8';
+        floatingEl.style.left = pos.x + 'px';
+        floatingEl.style.top = pos.y + 'px';
+        document.body.appendChild(floatingEl);
+        placedEl.style.opacity = '0.3';
+    }
 }
 function onDragMove(e) {
     if (!dragging || !floatingEl) return;
@@ -780,10 +799,38 @@ function onDragEnd(e) {
     if (da) {
         const r = da.getBoundingClientRect();
         da.classList.remove('drag-over');
-        if (pos.x >= r.left && pos.x <= r.right && pos.y >= r.top && pos.y <= r.bottom) {
-            placeCircle(dragSourceIdx);
-        } else if (dragSourceEl) {
-            dragSourceEl.style.opacity = '1';
+        const insideDrop = pos.x >= r.left && pos.x <= r.right && pos.y >= r.top && pos.y <= r.bottom;
+        if (isDraggingPlaced) {
+            if (insideDrop) {
+                // drop area 안에 다시 놓으면 그대로 유지
+                if (dragSourceEl) dragSourceEl.style.opacity = '1';
+            } else {
+                // drop area 밖에 놓으면 제거하고 source circle 복원
+                if (dragSourceEl) dragSourceEl.remove();
+                placedCount--;
+                const srcEl = document.querySelectorAll('.source-circle')[dragSourceIdx];
+                if (srcEl) {
+                    srcEl.classList.remove('used');
+                    srcEl.style.opacity = '1';
+                }
+                document.getElementById('source-count').textContent = (20 - placedCount);
+                if (placedCount === 0) {
+                    document.getElementById('fill-check-btn').disabled = true;
+                    if (!da.querySelector('.hint-text') && da.querySelectorAll('.placed-circle').length === 0) {
+                        const hint = document.createElement('span');
+                        hint.className = 'hint-text';
+                        hint.id = 'hint-text';
+                        hint.textContent = '여기에 동그라미를 놓으세요';
+                        da.appendChild(hint);
+                    }
+                }
+            }
+        } else {
+            if (insideDrop) {
+                placeCircle(dragSourceIdx);
+            } else if (dragSourceEl) {
+                dragSourceEl.style.opacity = '1';
+            }
         }
     }
     floatingEl.remove();
@@ -791,6 +838,7 @@ function onDragEnd(e) {
     dragging = false;
     dragSourceEl = null;
     dragSourceIdx = null;
+    isDraggingPlaced = false;
 }
 document.addEventListener('mousedown', onDragStart);
 document.addEventListener('mousemove', onDragMove);
@@ -809,6 +857,7 @@ function placeCircle(idx) {
     if (hint) hint.style.display = 'none';
     const c = document.createElement('div');
     c.className = 'placed-circle';
+    c.dataset.sourceIdx = idx;
     da.appendChild(c);
     document.getElementById('source-count').textContent = (sourceCircleCount - placedCount);
     document.getElementById('fill-check-btn').disabled = false;
