@@ -220,13 +220,13 @@
         .number-display .label { font-size: 1rem; font-weight: 600; color: #B8AD9E; margin-top: 4px; }
         .drop-area { min-height: 160px; border: 2.5px dashed #D8D2C8; border-radius: 20px; background: #FDFCFA; padding: 16px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; align-content: start; justify-items: center; transition: background 0.18s, border-color 0.18s; margin-bottom: 24px; position: relative; }
         .drop-area.drag-over { background: #D9EDFC; border-color: #6BADE8; border-style: solid; }
-        .drop-area .placed-circle { width: 36px; height: 36px; border-radius: 50%; background: #6BADE8; box-shadow: 0 2px 8px rgba(107,173,232,0.25); animation: popIn 0.35s ease-out forwards; }
+        .drop-area .placed-circle { width: 100%; max-width: 36px; aspect-ratio: 1; border-radius: 50%; background: #6BADE8; box-shadow: 0 2px 8px rgba(107,173,232,0.25); animation: popIn 0.35s ease-out forwards; }
         .drop-area .hint-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #C8C0B4; font-size: 0.9rem; font-weight: 500; pointer-events: none; }
         .divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
         .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #E8E2DA; }
         .divider span { font-size: 0.8rem; font-weight: 600; color: #B8AD9E; white-space: nowrap; }
-        .source-area { display: grid; grid-template-columns: repeat(10, 36px); gap: 8px; justify-content: center; padding: 12px 0; margin-bottom: 16px; }
-        .source-circle { width: 36px; height: 36px; border-radius: 50%; background: #F0A050; cursor: grab; touch-action: none; box-shadow: 0 2px 6px rgba(240,160,80,0.3); transition: transform 0.1s, opacity 0.15s; }
+        .source-area { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; justify-items: center; padding: 12px 0; margin-bottom: 16px; }
+        .source-circle { width: 100%; max-width: 36px; aspect-ratio: 1; border-radius: 50%; background: #F0A050; cursor: grab; touch-action: none; box-shadow: 0 2px 6px rgba(240,160,80,0.3); transition: transform 0.1s, opacity 0.15s; }
         .source-circle:active { cursor: grabbing; transform: scale(1.12); }
         .source-circle.used { opacity: 0; pointer-events: none; transform: scale(0); transition: all 0.3s ease; }
         .floating-circle { position: fixed; z-index: 9999; pointer-events: none; width: 40px; height: 40px; border-radius: 50%; background: #F0A050; transform: translate(-50%, -50%); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
